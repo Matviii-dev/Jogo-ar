@@ -14,12 +14,12 @@
     "
 >
 
-<title>Asteroid Shooter AR</title>
+<title>Asteroid Shooter</title>
 
-<!-- A-Frame -->
+<!-- AFRAME -->
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
-<!-- AR.js -->
+<!-- ARJS -->
 <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
 <style>
@@ -29,8 +29,8 @@ html,body{
     overflow:hidden;
     width:100%;
     height:100%;
-    font-family:Arial;
     background:black;
+    font-family:Arial;
 }
 
 /* HUD */
@@ -39,7 +39,6 @@ html,body{
     position:fixed;
     top:10px;
     left:10px;
-
     z-index:10;
 
     color:white;
@@ -73,7 +72,7 @@ html,body{
 
 .panel{
 
-    width:320px;
+    width:340px;
 
     background:#111827;
 
@@ -105,6 +104,8 @@ button{
     font-size:16px;
 
     font-weight:bold;
+
+    cursor:pointer;
 }
 
 </style>
@@ -125,6 +126,11 @@ button{
     Life:
     <span id="life">5</span>
 
+    <br>
+
+    Mode:
+    <span id="modeText">None</span>
+
 </div>
 
 <!-- MENU -->
@@ -133,22 +139,26 @@ button{
 
     <div class="panel">
 
-        <h1>Asteroid Shooter AR</h1>
+        <h1>Asteroid Shooter</h1>
 
         <p>
-            Point the camera at the HIRO marker.
+            Choose a game mode.
         </p>
 
-        <p>
-            Move your phone around the marker.
-        </p>
+        <!-- AR BUTTON -->
 
-        <p>
-            Aim the center cursor at asteroids.
-        </p>
+        <button id="arBtn">
 
-        <button id="startBtn">
-            Start Game
+            AR MODE
+
+        </button>
+
+        <!-- PC BUTTON -->
+
+        <button id="pcBtn">
+
+            PC MODE
+
         </button>
 
     </div>
@@ -159,12 +169,9 @@ button{
 
 <a-scene
 
-    embedded
+    id="scene"
 
-    arjs="
-        sourceType: webcam;
-        debugUIEnabled: false;
-    "
+    embedded
 
     vr-mode-ui="enabled:false"
 
@@ -185,21 +192,40 @@ button{
         ">
     </a-entity>
 
-    <!-- HIRO MARKER -->
+    <!-- SKY FOR PC MODE -->
 
-    <a-marker preset="hiro">
+    <a-sky
+        id="sky"
+        color="#000814"
+        visible="false">
+    </a-sky>
 
-        <!-- ASTEROIDS -->
+    <!-- MARKER -->
+
+    <a-marker
+        id="marker"
+        preset="hiro"
+        visible="false">
 
         <a-entity id="asteroidContainer"></a-entity>
 
     </a-marker>
 
+    <!-- PC CONTAINER -->
+
+    <a-entity
+        id="pcContainer"
+        visible="false">
+
+        <a-entity id="pcAsteroids"></a-entity>
+
+    </a-entity>
+
     <!-- CAMERA -->
 
-    <a-entity camera>
-
-        <!-- CURSOR -->
+    <a-entity
+        camera
+        look-controls>
 
         <a-cursor
 
@@ -230,8 +256,29 @@ button{
 
 /* ELEMENTS */
 
-const container =
+const marker =
+document.getElementById("marker");
+
+const sky =
+document.getElementById("sky");
+
+const modeText =
+document.getElementById("modeText");
+
+const arBtn =
+document.getElementById("arBtn");
+
+const pcBtn =
+document.getElementById("pcBtn");
+
+const asteroidContainer =
 document.getElementById("asteroidContainer");
+
+const pcContainer =
+document.getElementById("pcContainer");
+
+const pcAsteroids =
+document.getElementById("pcAsteroids");
 
 const scoreText =
 document.getElementById("score");
@@ -244,28 +291,117 @@ document.getElementById("life");
 let score = 0;
 let life = 5;
 let playing = false;
+let mode = "none";
+
+/* START AR MODE */
+
+arBtn.addEventListener("click",()=>{
+
+    mode = "AR";
+
+    modeText.textContent =
+    "AR";
+
+    document
+    .getElementById("menu")
+    .style.display = "none";
+
+    marker.setAttribute(
+        "visible",
+        true
+    );
+
+    document
+    .querySelector("a-scene")
+    .setAttribute(
+        "arjs",
+        `
+        sourceType: webcam;
+        debugUIEnabled: false;
+        `
+    );
+
+    playing = true;
+
+    startSpawner();
+
+});
+
+/* START PC MODE */
+
+pcBtn.addEventListener("click",()=>{
+
+    mode = "PC";
+
+    modeText.textContent =
+    "PC";
+
+    document
+    .getElementById("menu")
+    .style.display = "none";
+
+    sky.setAttribute(
+        "visible",
+        true
+    );
+
+    pcContainer.setAttribute(
+        "visible",
+        true
+    );
+
+    playing = true;
+
+    startSpawner();
+
+});
+
+/* SPAWNER */
+
+function startSpawner(){
+
+    setInterval(()=>{
+
+        if(playing){
+
+            createAsteroid();
+
+        }
+
+    },1000);
+
+}
 
 /* CREATE ASTEROID */
 
 function createAsteroid(){
-
-    if(!playing) return;
 
     const asteroid =
     document.createElement("a-sphere");
 
     asteroid.classList.add("asteroid");
 
-    /* RANDOM POSITION */
+    let x,y,z;
 
-    const x =
-    (Math.random()*3)-1.5;
+    /* AR MODE */
 
-    const y =
-    (Math.random()*2)+0.3;
+    if(mode === "AR"){
 
-    const z =
-    (Math.random()*-3)-2;
+        x = (Math.random()*3)-1.5;
+        y = (Math.random()*2)+0.3;
+        z = (Math.random()*-3)-2;
+
+    }
+
+    /* PC MODE */
+
+    if(mode === "PC"){
+
+        x = (Math.random()*8)-4;
+        y = (Math.random()*4)-1;
+        z = -10;
+
+    }
 
     asteroid.setAttribute(
         "position",
@@ -292,19 +428,37 @@ function createAsteroid(){
         "12"
     );
 
-    /* MOVE TOWARD PLAYER */
+    /* MOVEMENT */
 
-    asteroid.setAttribute(
-        "animation",
-        `
-        property: position;
-        to: 0 0 0;
-        dur: 4000;
-        easing: linear;
-        `
-    );
+    if(mode === "AR"){
 
-    /* DESTROY WHEN LOOKED AT */
+        asteroid.setAttribute(
+            "animation",
+            `
+            property: position;
+            to: 0 0 0;
+            dur: 4000;
+            easing: linear;
+            `
+        );
+
+    }
+
+    if(mode === "PC"){
+
+        asteroid.setAttribute(
+            "animation",
+            `
+            property: position;
+            to: 0 1.6 0;
+            dur: 5000;
+            easing: linear;
+            `
+        );
+
+    }
+
+    /* DESTROY */
 
     asteroid.addEventListener(
         "mouseenter",
@@ -315,29 +469,46 @@ function createAsteroid(){
         }
     );
 
-    container.appendChild(asteroid);
+    /* ADD */
 
-    /* DAMAGE PLAYER */
+    if(mode === "AR"){
+
+        asteroidContainer
+        .appendChild(asteroid);
+
+    }
+
+    if(mode === "PC"){
+
+        pcAsteroids
+        .appendChild(asteroid);
+
+    }
+
+    /* REMOVE */
 
     setTimeout(()=>{
 
-        if(container.contains(asteroid)){
+        if(
+            asteroid.parentNode
+        ){
 
-            container.removeChild(asteroid);
+            asteroid.parentNode
+            .removeChild(asteroid);
 
             loseLife();
 
         }
 
-    },4000);
+    },5000);
 
 }
 
-/* DESTROY */
+/* DESTROY ASTEROID */
 
 function destroyAsteroid(asteroid){
 
-    if(!container.contains(asteroid))
+    if(!asteroid.parentNode)
     return;
 
     asteroid.setAttribute(
@@ -351,9 +522,10 @@ function destroyAsteroid(asteroid){
 
     setTimeout(()=>{
 
-        if(container.contains(asteroid)){
+        if(asteroid.parentNode){
 
-            container.removeChild(asteroid);
+            asteroid.parentNode
+            .removeChild(asteroid);
 
         }
 
@@ -399,30 +571,6 @@ function endGame(){
     location.reload();
 
 }
-
-/* START */
-
-document
-.getElementById("startBtn")
-.addEventListener("click",()=>{
-
-    document
-    .getElementById("menu")
-    .style.display = "none";
-
-    playing = true;
-
-    setInterval(()=>{
-
-        if(playing){
-
-            createAsteroid();
-
-        }
-
-    },1000);
-
-});
 
 </script>
 
