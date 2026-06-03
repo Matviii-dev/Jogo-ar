@@ -1,14 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="
+        width=device-width,
+        initial-scale=1.0,
+        maximum-scale=1.0,
+        user-scalable=no
+    "
+>
 
 <title>Asteroid Shooter AR</title>
 
+<!-- A-Frame -->
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
+<!-- AR.js -->
 <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
 <style>
@@ -19,74 +30,121 @@ html,body{
     width:100%;
     height:100%;
     font-family:Arial;
+    background:black;
 }
+
+/* HUD */
 
 #hud{
     position:fixed;
     top:10px;
     left:10px;
+
     z-index:10;
+
     color:white;
-    background:rgba(0,0,0,.5);
-    padding:10px;
+
+    background:rgba(0,0,0,.6);
+
+    padding:12px;
+
     border-radius:8px;
+
+    line-height:1.5;
 }
+
+/* MENU */
 
 #menu{
     position:fixed;
+
     inset:0;
+
     z-index:20;
+
     display:flex;
+
     justify-content:center;
+
     align-items:center;
+
     background:rgba(0,0,0,.85);
 }
 
 .panel{
+
     width:320px;
+
     background:#111827;
+
     color:white;
+
     padding:25px;
+
     border-radius:12px;
+
     text-align:center;
 }
 
 button{
+
     width:100%;
+
     padding:14px;
+
     margin-top:15px;
+
     border:none;
+
     border-radius:8px;
+
     background:#38bdf8;
+
     color:black;
-    font-weight:bold;
+
     font-size:16px;
+
+    font-weight:bold;
 }
 
 </style>
+
 </head>
 
 <body>
 
+<!-- HUD -->
+
 <div id="hud">
+
     Score:
     <span id="score">0</span>
+
     <br>
+
     Life:
     <span id="life">5</span>
+
 </div>
 
+<!-- MENU -->
+
 <div id="menu">
+
     <div class="panel">
 
         <h1>Asteroid Shooter AR</h1>
 
         <p>
-            Aim at asteroids using the center cursor.
+            Point the camera at the HIRO marker.
         </p>
 
         <p>
-            Hold the cursor on the asteroid to destroy it.
+            Move your phone around the marker.
+        </p>
+
+        <p>
+            Aim the center cursor at asteroids.
         </p>
 
         <button id="startBtn">
@@ -94,11 +152,19 @@ button{
         </button>
 
     </div>
+
 </div>
 
+<!-- AR SCENE -->
+
 <a-scene
+
     embedded
-    arjs="sourceType: webcam;"
+
+    arjs="
+        sourceType: webcam;
+        debugUIEnabled: false;
+    "
 
     vr-mode-ui="enabled:false"
 
@@ -110,12 +176,35 @@ button{
 
 >
 
-    <a-camera position="0 0 0">
+    <!-- LIGHT -->
 
-        <!-- CENTER CURSOR -->
+    <a-entity
+        light="
+            type:ambient;
+            intensity:1.5;
+        ">
+    </a-entity>
+
+    <!-- HIRO MARKER -->
+
+    <a-marker preset="hiro">
+
+        <!-- ASTEROIDS -->
+
+        <a-entity id="asteroidContainer"></a-entity>
+
+    </a-marker>
+
+    <!-- CAMERA -->
+
+    <a-entity camera>
+
+        <!-- CURSOR -->
+
         <a-cursor
 
             fuse="true"
+
             fuse-timeout="700"
 
             color="#00FFFF"
@@ -133,17 +222,13 @@ button{
 
         ></a-cursor>
 
-    </a-camera>
-
-    <a-entity
-        light="type:ambient; intensity:1.5">
     </a-entity>
-
-    <a-entity id="asteroidContainer"></a-entity>
 
 </a-scene>
 
 <script>
+
+/* ELEMENTS */
 
 const container =
 document.getElementById("asteroidContainer");
@@ -154,9 +239,13 @@ document.getElementById("score");
 const lifeText =
 document.getElementById("life");
 
+/* GAME STATE */
+
 let score = 0;
 let life = 5;
 let playing = false;
+
+/* CREATE ASTEROID */
 
 function createAsteroid(){
 
@@ -167,14 +256,16 @@ function createAsteroid(){
 
     asteroid.classList.add("asteroid");
 
+    /* RANDOM POSITION */
+
     const x =
-    (Math.random()*4)-2;
+    (Math.random()*3)-1.5;
 
     const y =
-    (Math.random()*3)-1;
+    (Math.random()*2)+0.3;
 
     const z =
-    -8;
+    (Math.random()*-3)-2;
 
     asteroid.setAttribute(
         "position",
@@ -183,7 +274,7 @@ function createAsteroid(){
 
     asteroid.setAttribute(
         "radius",
-        Math.random()*0.3+0.25
+        Math.random()*0.2+0.15
     );
 
     asteroid.setAttribute(
@@ -201,24 +292,32 @@ function createAsteroid(){
         "12"
     );
 
+    /* MOVE TOWARD PLAYER */
+
     asteroid.setAttribute(
         "animation",
         `
         property: position;
-        to: 0 0 -1;
+        to: 0 0 0;
         dur: 4000;
         easing: linear;
         `
     );
 
-    // GAZE DESTROY
-    asteroid.addEventListener("mouseenter",()=>{
+    /* DESTROY WHEN LOOKED AT */
 
-        destroyAsteroid(asteroid);
+    asteroid.addEventListener(
+        "mouseenter",
+        ()=>{
 
-    });
+            destroyAsteroid(asteroid);
+
+        }
+    );
 
     container.appendChild(asteroid);
+
+    /* DAMAGE PLAYER */
 
     setTimeout(()=>{
 
@@ -233,6 +332,8 @@ function createAsteroid(){
     },4000);
 
 }
+
+/* DESTROY */
 
 function destroyAsteroid(asteroid){
 
@@ -265,6 +366,8 @@ function destroyAsteroid(asteroid){
 
 }
 
+/* LOSE LIFE */
+
 function loseLife(){
 
     if(!playing) return;
@@ -282,6 +385,8 @@ function loseLife(){
 
 }
 
+/* GAME OVER */
+
 function endGame(){
 
     playing = false;
@@ -294,6 +399,8 @@ function endGame(){
     location.reload();
 
 }
+
+/* START */
 
 document
 .getElementById("startBtn")
